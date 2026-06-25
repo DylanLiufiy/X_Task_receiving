@@ -1,15 +1,41 @@
+name: Auto Email Scraper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # 每天 UTC 0:00 自动运行
+
+jobs:
+  scrape_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Run Scraper
+        run: python scraper.py
+
       - name: Commit Results
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           
-          # 不管什么文件夹，直接添加当前目录下所有新增和修改的文件
+          # 强制将当前目录下生成的所有新文件、新文件夹添加到暂存区
           git add -A
           
-          # 检查是否有文件真的被改动或增加了
+          # 精准检测工作区是否有文件发生变动
           if ! git diff --cached --quiet; then
             git commit -m "Update scraped results"
             git push origin main
           else
-            echo "警告：Python脚本没有生成任何新数据或文件，没有什么可以提交的！"
+            echo "提示：Python 脚本本次运行没有产生任何新数据或文件，无需提交。"
           fi
